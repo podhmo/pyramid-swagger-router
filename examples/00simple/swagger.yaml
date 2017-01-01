@@ -14,7 +14,7 @@ paths:
   /pets:
     get:
       tags: [Pets]
-      operationId: app.get_pets
+      operationId: pet.get_pets
       summary: Get all pets
       parameters:
         - name: animal_type
@@ -36,7 +36,7 @@ paths:
   /pets/{pet_id}:
     get:
       tags: [Pets]
-      operationId: app.get_pet
+      operationId: pet.get_pet
       summary: Get a single pet
       parameters:
         - $ref: '#/parameters/pet_id'
@@ -49,7 +49,7 @@ paths:
           description: Pet does not exist
     put:
       tags: [Pets]
-      operationId: app.put_pet
+      operationId: pet.put_pet
       summary: Create or update a pet
       parameters:
         - $ref: '#/parameters/pet_id'
@@ -64,7 +64,7 @@ paths:
           description: New pet created
     delete:
       tags: [Pets]
-      operationId: app.delete_pet
+      operationId: pet.delete_pet
       summary: Remove a pet
       parameters:
         - $ref: '#/parameters/pet_id'
