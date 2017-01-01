@@ -1,11 +1,9 @@
 # -*- coding:utf-8 -*-
-import sys
 import logging
-from collections import defaultdict
-from collections import OrderedDict
+import sys
 from prestring import NameStore
-from dictknife import loading
-from prestring.python import Module
+from dictknife import loading, Accessor
+from .codegen import Codegen
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +19,7 @@ class RouteNameStore(NameStore):
 class Resolver(object):
     def __init__(self):
         self.route_name_store = RouteNameStore()
+        self.accessor = Accessor()
 
     def resolve_view_path(self, rootdata, d):
         return d["operationId"]
@@ -33,38 +32,21 @@ class Resolver(object):
         self.route_name_store[k] = module_name
         return self.route_name_store[k]
 
+    def resolve_ref(self, fulldata, d):
+        # todo: support quoted "/"
+        if "$ref" not in d:
+            return d
+        path = d["$ref"][len("#/"):].split("/")
+        name = path[-1]
 
-class Context(object):
-    def __init__(self):
-        m = self.m = Module()
-        self.routes = {}
-        with m.def_("includeme", "config"):
-            self.fm = m.submodule()
-
-    def add_view_setup(self, pattern, route, sym, method="GET", renderer=None):
-        # normalize
-        route = route.replace(".", "_")  # xxx
-        method = method.upper()
-
-        if route not in self.routes:
-            self.add_route(route, pattern)
-            self.routes[route] = OrderedDict()
-
-        k = (route, method)
-        if k not in self.routes[route]:  # xxx
-            self.add_view(sym, route, method)
-
-    def add_route(self, route, pattern):
-        self.fm.stmt('config.add_route({!r}, {!r})'.format(route, pattern))
-
-    def add_view(self, sym, route, method):
-        self.fm.stmt('config.add_view({!r}, route_name={!r}, request_method={!r})'.format(sym, route, method))
+        parent = self.accessor.maybe_access_container(fulldata, path)
+        if parent is None:
+            sys.stderr.write("\t{!r} is not found\n".format(d["$ref"]))
+            return d
+        return self.resolve_ref(fulldata, parent[name])
 
 
 class Driver(object):
-    def __init__(self):
-        self.resolver = Resolver()
-
     def run(self, src, dst):
         data = self.load(src)
         result = self.transform(data)
@@ -74,23 +56,13 @@ class Driver(object):
         loading.setup()
         return loading.load(src)
 
-    def dump(self, md, dst):
-        for name, ctx in md.items():
-            print(name, file=dst)
-            print(ctx.m, file=dst)
-            print("", file=dst)
+    def dump(self, output, dst):
+        output.output()
+        # for name, ctx in md.items():
+        #     print(name, file=dst)
+        #     print(ctx.m, file=dst)
+        #     print("", file=dst)
 
     def transform(self, data):
-        md = defaultdict(Context)
-        for pattern, d in (data.get("paths") or {}).items():
-            for method, d in d.items():
-                try:
-                    view_path = self.resolver.resolve_view_path(data, d)
-                except KeyError:
-                    sys.stderr.write("route is not resolved from {!r}\n".format(["paths", pattern, method]))
-                    continue
-                module_name = self.resolver.resolve_module_name(view_path)
-                route_name = self.resolver.resolve_route_name(module_name, pattern)
-                md[module_name].add_view_setup(pattern, route_name, view_path, method=method)
-
-        return md
+        resolver = Resolver()
+        return Codegen(resolver).codegen(data)

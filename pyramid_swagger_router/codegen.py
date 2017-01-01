@@ -1,0 +1,135 @@
+# -*- coding:utf-8 -*-
+import sys
+import logging
+import json
+import os.path
+from collections import OrderedDict
+from prestring.python import Module
+from prestring import LazyKeywordsRepr, LazyFormat
+from prestring.output import SeparatedOutput
+
+
+logger = logging.getLogger(__name__)
+
+
+class OptionHandler(object):
+    def __init__(self, options):
+        self.options = options
+
+    @property
+    def use_view_config(self):
+        return self.options.get("use_view_config", False)
+
+
+class Context(object):
+    def __init__(self, options={"use_view_config": True}):
+        self.options = OptionHandler(options)
+        self.route = _RouteContext(parent=self)
+        self.view = _ViewContext(parent=self)
+        self.used = {}
+
+
+class _RouteContext(object):
+    def __init__(self, parent):
+        self.parent = parent
+        m = self.m = Module()
+        with m.def_("includeme", "config"):
+            self.fm = m.submodule()
+            if parent.options.use_view_config:
+                m.stmt("config.scan('.views')")
+
+    def add_route(self, route, pattern, d):
+        self.fm.stmt('config.add_route({!r}, {!r})'.format(route, pattern))
+
+    def add_view(self, sym, route, method, d):
+        self.fm.stmt('config.add_view({!r}, route_name={!r}, request_method={!r})'.format(sym, route, method))
+
+
+class _ViewContext(object):
+    def __init__(self, parent):
+        self.parent = parent
+        self.m = Module(import_unique=True)
+        self.im = self.m.submodule()
+        self.m.sep()
+        # todo: scan module file
+
+    def add_view(self, sym, route, method, d, docstring=None):
+        name = sym.rsplit(".", 1)[-1]
+        m = self.m
+        self.from_("pyramid.view", "view_config")
+
+        m.stmt(LazyFormat("@view_config({})", LazyKeywordsRepr(dict(route_name=route, request_method=method))))
+        with m.def_(name, "context", "request"):
+            m.stmt('"""')
+            if "summary" in d:
+                m.stmt(d["summary"])
+            if docstring:
+                m.stmt(docstring)
+            m.stmt('"""')
+            m.return_("{}")
+
+    def from_(self, module, name):
+        logger.debug("      import: module=%s, name=%s", module, name)
+        self.im.from_(module, name)
+
+    def import_(self, module):
+        logger.debug("      import: module=%s", module)
+        self.im.import_(module)
+
+
+class ContextStore(object):
+    def __init__(self, dstdir="."):
+        self.output = SeparatedOutput(dstdir, prefix="", module_factory=lambda: Module(import_unique=True))
+        self.contexts = {}
+
+    def get_context(self, module_name):
+        if module_name in self.contexts:
+            return self.contexts[module_name]
+        context = self.contexts[module_name] = Context()
+        dirname = module_name.replace(".", "/")
+        route_file = self.output.new_file(os.path.join(dirname, "routes.py"), m=context.route.m)
+        view_file = self.output.new_file(os.path.join(dirname, "views.py"), m=context.view.m)
+        self.output.files[route_file.name] = route_file
+        self.output.files[view_file.name] = view_file
+        return context
+
+
+class Codegen(object):
+    def __init__(self, resolver):
+        self.resolver = resolver
+
+    def add_routing(self, store, data):
+        for pattern, d in (data.get("paths") or {}).items():
+            for method, d in d.items():
+                try:
+                    view_path = self.resolver.resolve_view_path(data, d)
+                except KeyError:
+                    sys.stderr.write("route is not resolved from {!r}\n".format(["paths", pattern, method]))
+                    continue
+                module_name = self.resolver.resolve_module_name(view_path)
+                route_name = self.resolver.resolve_route_name(module_name, pattern)
+                ctx = store.get_context(module_name)
+
+                # normalize
+                route = route_name.replace(".", "_")  # xxx
+                method = method.upper()
+
+                if route not in ctx.used:
+                    ctx.route.add_route(route, pattern, d)
+                    ctx.used[route] = OrderedDict()
+
+                k = (route, method)
+                if k not in ctx.used[route]:  # xxx
+                    if ctx.options.use_view_config:
+                        docstring = None
+                        if "parameters" in d:
+                            parameters = [self.resolver.resolve_ref(data, pd) for pd in d["parameters"]]
+                            docstring = json.dumps(parameters, indent=2, ensure_ascii=False).replace("\n", "\n    ")
+                        ctx.view.add_view(view_path, route, method, d, docstring)
+                    else:
+                        ctx.route.add_view(view_path, route, method, d)
+
+    def codegen(self, data):
+        store = ContextStore()
+        self.add_routing(store, data)
+        return store.output
