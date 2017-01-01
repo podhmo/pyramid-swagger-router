@@ -37,6 +37,9 @@ class _RouteContext(object):
             if parent.options.use_view_config:
                 m.stmt("config.scan('.views')")
 
+        with m.def_("includeme", "config"):
+            m.stmt("config.include(includeme_swagger_router)")
+
     def add_route(self, route, pattern, d):
         self.fm.stmt('config.add_route({!r}, {!r})'.format(route, pattern))
 
@@ -88,7 +91,7 @@ class ContextStore(object):
             return self.contexts[module_name]
         context = self.contexts[module_name] = Context()
         dirname = module_name.replace(".", "/")
-        route_file = self.output.new_file(os.path.join(dirname, "routes.py"), m=context.route.m)
+        route_file = self.output.new_file(os.path.join(dirname, "__init__.py"), m=context.route.m)
         view_file = self.output.new_file(os.path.join(dirname, "views.py"), m=context.view.m)
         self.output.files[route_file.name] = route_file
         self.output.files[view_file.name] = view_file
@@ -135,13 +138,15 @@ class Codegen(object):
     def merge_routing(self, store):
         fs = store.output.files
         for name, f in list(fs.items()):
-            if os.path.exists(name):
-                logger.info("merge file: %s", name)
-                if name.endswith("views.py"):
+            if name.endswith("views.py"):
+                if os.path.exists(name):
+                    logger.info("merge file: %s", name)
                     with open(name) as rf:
                         t = self.view_func_modifier.modify(rf.read(), str(f.m))
                         fs[name] = File(name=name, m=t.dumps())
-                elif name.endswith("routes.py"):
+            elif name.endswith("__init__.py"):
+                if os.path.exists(name):
+                    logger.info("merge file: %s", name)
                     with open(name) as rf:
                         t = self.route_func_modifier.modify(rf.read(), str(f.m))
                         fs[name] = File(name=name, m=t.dumps())

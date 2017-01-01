@@ -18,13 +18,8 @@ base_nodes.LineProxyList._get_separator_indentation = patched__get_separator_ind
 
 
 class FunctionDefModifier(object):
-    additionals = []
-
-    def on_additional_create(self, name, t0):
-        logger.debug("create def: name=%s", name)
-
-    def on_additional_update(self, name, node, t0):
-        logger.debug("update def: name=%s", name)
+    def on_additional(self, t0, node_dict):
+        return
 
     def on_create(self, name, node):
         logger.debug("create def: name=%s", name)
@@ -53,11 +48,7 @@ class FunctionDefModifier(object):
                     t0.append(newnode)
                 d[node.name] = newnode
 
-        for name in self.additionals:
-            if name not in d:
-                self.on_additional_create(name, t0)
-            else:
-                self.on_additional_update(name, d[name], t0)
+        self.on_additional(t0, d)
         return t0
 
 
@@ -74,27 +65,15 @@ class ViewsModifier(FunctionDefModifier):
 
 
 class RoutesModifier(FunctionDefModifier):
-    additionals = ["includeme"]
+    def on_additional(self, t0, node_dict):
+        if "includeme" in node_dict:
+            node = node_dict["includeme"]
 
-    def on_additional_create(self, name, t0):
-        assert name == "includeme"
-        super().on_additional_create(name, t0)
-        """"""
-        includeme = """
-def includeme(config):
-    config.include(includeme_swagger_router)
-"""
-        t0.node_list.append(RedBaron(includeme))
-
-    def on_additional_update(self, name, node, t0):
-        super().on_additional_update(name, node, t0)
-        assert name == "includeme"
-        """"""
-        includeme = """config.include(includeme_swagger_router)"""
-        for sentence in node.value:
-            if str(sentence) == includeme:
-                return
-        node.insert(0, RedBaron(includeme))
+            code = """config.include(includeme_swagger_router)"""
+            for sentence in node.value:
+                if str(sentence) == code:
+                    return
+            node.insert(0, RedBaron(code))
 
     def on_update(self, name, node, original):
         if name == "includeme_swagger_router":

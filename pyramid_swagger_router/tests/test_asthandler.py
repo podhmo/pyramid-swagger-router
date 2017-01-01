@@ -6,25 +6,6 @@ class RoutesModifierTests(unittest.TestCase):
         from pyramid_swagger_router.asthandler import RoutesModifier
         return RoutesModifier()
 
-    def test_add_includeme(self):
-        base = ""
-        additional = """\
-def includeme_swagger_router(config):
-    config.add_route('hello', '/hello')
-    config.scan('.views')
-"""
-        target = self._makeOne()
-        result = target.modify(base, additional).dumps()
-        expected = """\
-def includeme_swagger_router(config):
-    config.add_route('hello', '/hello')
-    config.scan('.views')
-
-def includeme(config):
-    config.include(includeme_swagger_router)
-"""
-        self.assertEqual(expected.rstrip(), result.rstrip())
-
     def test_update_includeme(self):
         base = """\
 def includeme(config):
