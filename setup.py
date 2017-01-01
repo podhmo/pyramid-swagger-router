@@ -16,7 +16,9 @@ except IOError:
 
 
 install_requires = [
-    'setuptools',
+    "magicalimport",
+    'dictknife[load]',
+    "prestring",
 ]
 
 
@@ -52,5 +54,6 @@ setup(name='pyramid-swagger-router',
       tests_require=tests_require,
       test_suite="pyramid_swagger_router.tests",
       entry_points="""
+      [console_scripts]
+pyramid-swagger-router=pyramid_swagger_router.cmd:main
 """)
-
