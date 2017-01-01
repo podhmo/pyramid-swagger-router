@@ -3,7 +3,7 @@ from pyramid.view import(
 )
 
 
-@view_config(renderer='json', request_method='GET', route_name='pet')
+@view_config(renderer='json', request_method='GET', route_name='pets')
 def get_pets(context, request):
     """
     Get all pets
@@ -16,7 +16,7 @@ def get_pets(context, request):
     return {}
 
 
-@view_config(renderer='json', request_method='GET', route_name='pet1')
+@view_config(renderer='json', request_method='GET', route_name='pet')
 def get_pet(context, request):
     """
     Get a single pet
@@ -28,7 +28,7 @@ def get_pet(context, request):
     return {}
 
 
-@view_config(renderer='json', request_method='PUT', route_name='pet1')
+@view_config(renderer='json', request_method='PUT', route_name='pet')
 def put_pet(context, request):
     """
     Create or update a pet
@@ -84,7 +84,7 @@ def put_pet(context, request):
     return {}
 
 
-@view_config(renderer='json', request_method='DELETE', route_name='pet1')
+@view_config(renderer='json', request_method='DELETE', route_name='pet')
 def delete_pet(context, request):
     """
     Remove a pet
