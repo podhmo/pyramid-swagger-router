@@ -63,7 +63,9 @@ class _ViewContext(object):
             if "summary" in d:
                 m.stmt(d["summary"])
             if docstring:
-                m.stmt(docstring)
+                m.stmt("")
+                for line in docstring.split("\n"):
+                    m.stmt(line)
             m.stmt('"""')
             m.return_("{}")
 
@@ -101,14 +103,17 @@ class Codegen(object):
 
     def add_routing(self, store, fulldata):
         for pattern, d in (fulldata.get("paths") or {}).items():
+            route_name = d.get("x-pyramid-route-name", None)
             for method, d in d.items():
+                if method.startswith("x-"):
+                    continue
                 try:
                     view_path = self.resolver.resolve_view_path(fulldata, d)
                 except KeyError:
                     sys.stderr.write("route is not resolved from {!r}\n".format(["paths", pattern, method]))
                     continue
                 module_name = self.resolver.resolve_module_name(view_path)
-                route_name = self.resolver.resolve_route_name(module_name, pattern)
+                route_name = self.resolver.resolve_route_name(module_name, pattern, route_name=route_name)
                 ctx = store.get_context(module_name)
 
                 # normalize
