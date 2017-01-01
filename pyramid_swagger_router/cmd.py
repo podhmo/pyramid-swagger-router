@@ -9,7 +9,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--driver", default="pyramid_swagger_router.driver:Driver")
     parser.add_argument("--logging", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"])
-    parser.add_argument("file", default=None)
+    parser.add_argument("src")
+    parser.add_argument("dst")
     args = parser.parse_args()
 
     # todo: option
@@ -23,8 +24,5 @@ def main():
         driver_cls = "pyramid_swagger_router.driver:{}".format(driver_cls)
     driver = import_symbol(driver_cls)()
 
-    if args.file is None:
-        driver.run(sys.stdin, sys.stdout)
-    else:
-        with open(args.file) as rf:
-            driver.run(rf, sys.stdout)
+    with open(args.src) as rf:
+        driver.run(rf, args.dst)

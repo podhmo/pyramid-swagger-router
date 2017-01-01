@@ -5,7 +5,7 @@ import os.path
 from collections import OrderedDict
 from prestring.python import Module
 from prestring import LazyKeywordsRepr, LazyFormat
-from prestring.output import SeparatedOutput, File
+from prestring.output import File
 from .asthandler import ViewsModifier, RoutesModifier
 
 logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ class _RouteContext(object):
         self.fm.stmt('config.add_route({!r}, {!r})'.format(route, pattern))
 
     def add_view(self, sym, route, method, d):
-        self.fm.stmt('config.add_view({!r}, route_name={!r}, request_method={!r})'.format(sym, route, method))
+        self.fm.stmt('config.add_view({!r}, route_name={!r}, request_method={!r}, renderer="json")'.format(sym, route, method))
 
 
 class _ViewContext(object):
@@ -60,7 +60,7 @@ class _ViewContext(object):
         m = self.m
         self.from_("pyramid.view", "view_config")
 
-        m.stmt(LazyFormat("@view_config({})", LazyKeywordsRepr(dict(route_name=route, request_method=method))))
+        m.stmt(LazyFormat("@view_config({})", LazyKeywordsRepr(dict(route_name=route, request_method=method, renderer="json"))))
         with m.def_(name, "context", "request"):
             m.stmt('"""')
             if "summary" in d:
@@ -82,8 +82,8 @@ class _ViewContext(object):
 
 
 class ContextStore(object):
-    def __init__(self, dstdir="."):
-        self.output = SeparatedOutput(dstdir, prefix="", module_factory=lambda: Module(import_unique=True))
+    def __init__(self, output):
+        self.output = output
         self.contexts = {}
 
     def get_context(self, module_name):
@@ -151,8 +151,8 @@ class Codegen(object):
                         t = self.route_func_modifier.modify(rf.read(), str(f.m))
                         fs[name] = File(name=name, m=t.dumps())
 
-    def codegen(self, data):
-        store = ContextStore()
+    def codegen(self, data, output):
+        store = ContextStore(output)
         self.add_routing(store, data)
         self.merge_routing(store)
         return store.output
