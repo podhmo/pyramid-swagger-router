@@ -19,6 +19,7 @@ install_requires = [
     "magicalimport",
     'dictknife[load]',
     "prestring",
+    "redbaron",
 ]
 
 

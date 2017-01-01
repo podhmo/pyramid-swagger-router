@@ -1,13 +1,12 @@
 # -*- coding:utf-8 -*-
 import sys
 import logging
-import json
 import os.path
 from collections import OrderedDict
 from prestring.python import Module
 from prestring import LazyKeywordsRepr, LazyFormat
-from prestring.output import SeparatedOutput
-
+from prestring.output import SeparatedOutput, File
+from .asthandler import ViewsModifier, RoutesModifier
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +32,7 @@ class _RouteContext(object):
     def __init__(self, parent):
         self.parent = parent
         m = self.m = Module()
-        with m.def_("includeme", "config"):
+        with m.def_("includeme_swagger_router", "config"):
             self.fm = m.submodule()
             if parent.options.use_view_config:
                 m.stmt("config.scan('.views')")
@@ -97,12 +96,14 @@ class ContextStore(object):
 class Codegen(object):
     def __init__(self, resolver):
         self.resolver = resolver
+        self.view_func_modifier = ViewsModifier()
+        self.route_func_modifier = RoutesModifier()
 
-    def add_routing(self, store, data):
-        for pattern, d in (data.get("paths") or {}).items():
+    def add_routing(self, store, fulldata):
+        for pattern, d in (fulldata.get("paths") or {}).items():
             for method, d in d.items():
                 try:
-                    view_path = self.resolver.resolve_view_path(data, d)
+                    view_path = self.resolver.resolve_view_path(fulldata, d)
                 except KeyError:
                     sys.stderr.write("route is not resolved from {!r}\n".format(["paths", pattern, method]))
                     continue
@@ -121,15 +122,27 @@ class Codegen(object):
                 k = (route, method)
                 if k not in ctx.used[route]:  # xxx
                     if ctx.options.use_view_config:
-                        docstring = None
-                        if "parameters" in d:
-                            parameters = [self.resolver.resolve_ref(data, pd) for pd in d["parameters"]]
-                            docstring = json.dumps(parameters, indent=2, ensure_ascii=False).replace("\n", "\n    ")
+                        docstring = self.resolver.view_docstring(fulldata, d)
                         ctx.view.add_view(view_path, route, method, d, docstring)
                     else:
                         ctx.route.add_view(view_path, route, method, d)
 
+    def merge_routing(self, store):
+        fs = store.output.files
+        for name, f in list(fs.items()):
+            if os.path.exists(name):
+                logger.info("merge file: %s", name)
+                if name.endswith("views.py"):
+                    with open(name) as rf:
+                        t = self.view_func_modifier.modify(rf.read(), str(f.m))
+                        fs[name] = File(name=name, m=t.dumps())
+                elif name.endswith("routes.py"):
+                    with open(name) as rf:
+                        t = self.route_func_modifier.modify(rf.read(), str(f.m))
+                        fs[name] = File(name=name, m=t.dumps())
+
     def codegen(self, data):
         store = ContextStore()
         self.add_routing(store, data)
+        self.merge_routing(store)
         return store.output
