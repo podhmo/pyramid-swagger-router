@@ -105,7 +105,10 @@ class Codegen(object):
         self.route_func_modifier = RoutesModifier()
 
     def add_routing(self, store, fulldata):
+        base_path = fulldata.get("basePath")
         for pattern, d in (fulldata.get("paths") or {}).items():
+            if base_path is not None:
+                pattern = "{}/{}".format(base_path.rstrip("/"), pattern.lstrip("/"))
             route_name = d.get("x-pyramid-route-name", None)
             for method, d in d.items():
                 if method.startswith("x-"):

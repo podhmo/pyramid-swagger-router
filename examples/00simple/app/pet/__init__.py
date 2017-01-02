@@ -1,6 +1,6 @@
 def includeme_swagger_router(config):
-    config.add_route('pets', '/pets')
-    config.add_route('pet', '/pets/{pet_id}')
+    config.add_route('pets', '/api/pets')
+    config.add_route('pet', '/api/pets/{pet_id}')
     config.scan('.views')
 
 

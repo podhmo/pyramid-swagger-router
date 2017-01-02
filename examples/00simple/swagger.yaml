@@ -6,6 +6,8 @@ consumes:
   - application/json
 produces:
   - application/json
+basePath:
+  /api
 # security:
 #   # enable OAuth protection for all REST endpoints
 #   # (only active if the TOKENINFO_URL environment variable is set)
