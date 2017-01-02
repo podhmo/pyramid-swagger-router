@@ -30,13 +30,12 @@ class Context(object):
 
 class _RouteContext(object):
     def __init__(self, parent):
+        self.scanned = set()
         self.parent = parent
         m = self.m = Module()
         with m.def_("includeme_swagger_router", "config"):
             self.fm = m.submodule()
-            if parent.options.use_view_config:
-                m.stmt("config.scan('.views')")
-
+            self.scanm = m.submodule()
         with m.def_("includeme", "config"):
             m.stmt("config.include(includeme_swagger_router)")
 
@@ -45,6 +44,10 @@ class _RouteContext(object):
 
     def add_view(self, sym, route, method, d):
         self.fm.stmt('config.add_view({!r}, route_name={!r}, request_method={!r}, renderer="json")'.format(sym, route, method))
+
+    def add_scan(self, view_module):
+        if self.parent.options.use_view_config:
+            self.scanm.stmt("config.scan('.{}')".format(view_module.split(".")[-1]))
 
 
 class _ViewContext(object):
@@ -85,17 +88,36 @@ class ContextStore(object):
     def __init__(self, output):
         self.output = output
         self.contexts = {}
+        self.routes = {}
 
     def get_context(self, module_name):
         if module_name in self.contexts:
             return self.contexts[module_name]
         context = self.contexts[module_name] = Context()
-        dirname = module_name.replace(".", "/")
-        route_file = self.output.new_file(os.path.join(dirname, "__init__.py"), m=context.route.m)
-        view_file = self.output.new_file(os.path.join(dirname, "views.py"), m=context.view.m)
-        self.output.files[route_file.name] = route_file
+        view_path = "{}.py".format(module_name.replace(".", "/"))
+
+        if len(module_name.split(".")) <= 2:
+            route_path = os.path.join(os.path.dirname(view_path), "routes.py")
+        else:
+            route_path = os.path.join(os.path.dirname(view_path), "__init__.py")
+
+        if route_path in self.routes:
+            context.route = self.routes[route_path]
+        else:
+            route_file = self.output.new_file(route_path, m=context.route.m)
+            self.output.files[route_file.name] = route_file
+            self.routes[route_path] = context.route
+        context.route.add_scan(module_name)
+        view_file = self.output.new_file(view_path, m=context.view.m)
         self.output.files[view_file.name] = view_file
         return context
+
+    def _get_or_create_route_file(self, path, context):
+        if path in self.output.files:
+            f = self.output.files[path]
+            return f
+        else:
+            return self.output.new_file(path, m=context.route.m)
 
 
 class Codegen(object):

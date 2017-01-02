@@ -17,7 +17,7 @@ paths:
     x-pyramid-route-name: pets
     get:
       tags: [Pets]
-      operationId: pet.get_pets
+      operationId: app.views.get_pets
       summary: Get all pets
       parameters:
         - name: animal_type
@@ -40,7 +40,7 @@ paths:
     x-pyramid-route-name: pet
     get:
       tags: [Pets]
-      operationId: pet.get_pet
+      operationId: app.views.get_pet
       summary: Get a single pet
       parameters:
         - $ref: '#/parameters/pet_id'
@@ -53,7 +53,7 @@ paths:
           description: Pet does not exist
     put:
       tags: [Pets]
-      operationId: pet.put_pet
+      operationId: app.views.put_pet
       summary: Create or update a pet
       parameters:
         - $ref: '#/parameters/pet_id'
@@ -68,7 +68,7 @@ paths:
           description: New pet created
     delete:
       tags: [Pets]
-      operationId: pet.delete_pet
+      operationId: app.views.delete_pet
       summary: Remove a pet
       parameters:
         - $ref: '#/parameters/pet_id'

@@ -7,7 +7,7 @@ def main():
     here = os.path.dirname(os.path.abspath(__file__))
     settings = {"pyramid.reload_all": True, "here": here}
     config = Configurator(settings=settings)
-    config.include("app.pet")
+    config.include(".routes")
     app = config.make_wsgi_app()
     server = make_server('0.0.0.0', 8080, app)
     server.serve_forever()
