@@ -1,0 +1,15 @@
+.
+├── Makefile
+├── app
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   ├── __init__.cpython-35.pyc
+│   │   ├── routes.cpython-35.pyc
+│   │   └── views.cpython-35.pyc
+│   ├── routes.py
+│   └── views.py
+├── structure.txt
+├── swagger.yaml
+└── test.sh
+
+2 directories, 10 files

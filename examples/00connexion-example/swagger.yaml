@@ -3,15 +3,13 @@ info:
   title: Pet Shop Example API
   version: "0.1"
 consumes:
-  - application/json
+  - app.views.ication/json
 produces:
-  - application/json
-basePath:
-  /api
-# security:
-#   # enable OAuth protection for all REST endpoints
-#   # (only active if the TOKENINFO_URL environment variable is set)
-#   - oauth2: [uid]
+  - app.views.ication/json
+security:
+  # enable OAuth protection for all REST endpoints
+  # (only active if the TOKENINFO_URL environment variable is set)
+  - oauth2: [uid]
 paths:
   /pets:
     x-pyramid-route-name: pets
@@ -121,10 +119,11 @@ definitions:
         example: "2015-07-07T15:49:51.230+02:00"
         readOnly: true
 
-# securityDefinitions:
-#   oauth2:
-#     type: oauth2
-#     flow: implicit
-#     authorizationUrl: https://example.com/oauth2/dialog
-#     scopes:
-#       uid: Unique identifier of the user accessing the service.
+
+securityDefinitions:
+  oauth2:
+    type: oauth2
+    flow: implicit
+    authorizationUrl: https://example.com/oauth2/dialog
+    scopes:
+      uid: Unique identifier of the user accessing the service.
