@@ -89,6 +89,7 @@ class ContextStore(object):
         self.output = output
         self.contexts = {}
         self.routes = {}
+        self.views = {}
 
     def get_context(self, module_name):
         if module_name in self.contexts:
@@ -109,6 +110,7 @@ class ContextStore(object):
             self.routes[route_path] = context.route
         context.route.add_scan(module_name)
         view_file = self.output.new_file(view_path, m=context.view.m)
+        self.views[view_file.name] = view_file
         self.output.files[view_file.name] = view_file
         return context
 
@@ -163,13 +165,13 @@ class Codegen(object):
     def merge_routing(self, store):
         fs = store.output.files
         for name, f in list(fs.items()):
-            if name.endswith("views.py"):
+            if name in store.views:
                 if os.path.exists(name):
                     logger.info("merge file: %s", name)
                     with open(name) as rf:
                         t = self.view_func_modifier.modify(rf.read(), str(f.m))
                         fs[name] = File(name=name, m=t.dumps())
-            elif name.endswith("__init__.py"):
+            elif name in store.routes:
                 if os.path.exists(name):
                     logger.info("merge file: %s", name)
                     with open(name) as rf:
