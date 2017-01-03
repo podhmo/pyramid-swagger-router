@@ -18,7 +18,7 @@ Code generation is better than meta-programming
 Rational:
 
 - Reading generated code is more easier than reading meta-programming code
-- If you don't to stop the code generation, just stop it (stopping using code generation is more easier than stopping meta-programming)
+- If you want to stop the code generation, just stop it (stopping using code generation is more easier than stopping meta-programming)
 
 Onetime scaffold is simply bad
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

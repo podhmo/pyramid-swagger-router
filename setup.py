@@ -33,7 +33,7 @@ testing_extras = tests_require + [
 ]
 
 setup(name='pyramid-swagger-router',
-      version='0.1',
+      version='0.1.1',
       description="view's code generation from a swagger's definition file.",
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
