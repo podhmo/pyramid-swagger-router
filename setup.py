@@ -34,7 +34,7 @@ testing_extras = tests_require + [
 
 setup(name='pyramid-swagger-router',
       version='0.0',
-      description='wip',
+      description="view's code generation from a swagger's definition file.",
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
           "Programming Language :: Python",
