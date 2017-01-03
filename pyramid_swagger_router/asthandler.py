@@ -1,4 +1,5 @@
 # -*- coding:utf-8 -*-
+import sys  # NOQA
 from collections import OrderedDict
 from redbaron import RedBaron, nodes, base_nodes
 import logging
@@ -94,6 +95,9 @@ class DocstringUpdateHandler(object):
 
 
 class ViewConfigDecoratorUpdateHandler(object):
+    def __init__(self):
+        self.weaks = set(["renderer"])
+
     # override
     def on_update(self, name, node, original):
         if not self.has_decorator(node):
@@ -106,7 +110,7 @@ class ViewConfigDecoratorUpdateHandler(object):
             original.decorators.append(view_config)
         else:
             original_view_config = find_decorator(original, "view_config")
-            merge_decorator(original_view_config, view_config)
+            merge_decorator(original_view_config, view_config, weaks=self.weaks)
 
     def has_decorator(self, node):
         return bool(node.decorators)
@@ -119,13 +123,16 @@ def find_decorator(node, name):
     return None
 
 
-def merge_decorator(deco_node0, deco_node1):
+def merge_decorator(deco_node0, deco_node1, weaks=None):
+    weaks = weaks or []
     d = OrderedDict()
     for arg in deco_node0.call.value:
         name, value = str(arg).split("=", 1)
         d[name] = value
     for arg in deco_node1.call.value:
         name, value = str(arg).split("=", 1)
+        if name in weaks and name in d:
+            continue
         d[name] = value
     call = deco_node0.call
     # clear
