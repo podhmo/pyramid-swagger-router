@@ -27,7 +27,12 @@ Onetime scaffold (like a cookiecutter) is good for first creation. But, after sc
 
 It is ok, pyramid-swagger-router command called multiple times(because of merging code via FST(full syntax tree) (thunks to `redbaron <https://github.com/PyCQA/redbaron>`_)).
 
-how to use
+Where is the Router?
+----------------------------------------
+
+Nothing. This is the code generation tool for routing setting(including view configuration).
+
+How to use
 ----------------------------------------
 
 How to use this.

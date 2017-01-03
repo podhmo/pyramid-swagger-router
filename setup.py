@@ -33,18 +33,18 @@ testing_extras = tests_require + [
 ]
 
 setup(name='pyramid-swagger-router',
-      version='0.0',
+      version='0.1',
       description="view's code generation from a swagger's definition file.",
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
           "Programming Language :: Python",
           "Programming Language :: Python :: Implementation :: CPython",
       ],
-      keywords='',
-      author="",
-      author_email="",
-      url="",
-      packages=find_packages(exclude=["pyramid-swagger-router.tests"]),
+      keywords='swagger,pyramid,code-generation,view,router',
+      author="podhmo",
+      author_email="ababjam61@gmail.com",
+      url="https://github.com/podhmo/pyramid-swagger-router",
+      packages=find_packages(exclude=["pyramid_swagger_router.tests"]),
       include_package_data=True,
       zip_safe=False,
       install_requires=install_requires,
@@ -57,4 +57,5 @@ setup(name='pyramid-swagger-router',
       entry_points="""
       [console_scripts]
 pyramid-swagger-router=pyramid_swagger_router.cmd:main
+swagger-pyramid-router=pyramid_swagger_router.cmd:main
 """)
