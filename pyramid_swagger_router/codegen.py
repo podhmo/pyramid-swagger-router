@@ -179,15 +179,17 @@ class Codegen(object):
         fs = store.output.files
         for name, f in list(fs.items()):
             if name in store.views:
-                if os.path.exists(name):
-                    logger.info("merge file: %s", name)
-                    with open(name) as rf:
+                path = os.path.join(store.output.dirname, name)
+                if os.path.exists(path):
+                    logger.info("merge file: %s", path)
+                    with open(path) as rf:
                         t = self.view_func_modifier.modify(rf.read(), str(f.m))
                         fs[name] = File(name=name, m=t.dumps())
             elif name in store.routes:
-                if os.path.exists(name):
-                    logger.info("merge file: %s", name)
-                    with open(name) as rf:
+                path = os.path.join(store.output.dirname, name)
+                if os.path.exists(path):
+                    logger.info("merge file: %s", path)
+                    with open(path) as rf:
                         t = self.route_func_modifier.modify(rf.read(), str(f.m))
                         fs[name] = File(name=name, m=t.dumps())
 
