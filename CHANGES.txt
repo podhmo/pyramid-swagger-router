@@ -1,1 +1,4 @@
+0.1.2
 
+- fix merge detection bug
+- fix error is occured when including parameters in methods section
