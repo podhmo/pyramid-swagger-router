@@ -27,6 +27,13 @@ class Context(object):
         self.view = _ViewContext(parent=self)
         self.used = {}
 
+    def build_view_setting(self, route, method, renderer="json"):
+        kwargs = OrderedDict()
+        kwargs["route_name"] = route
+        kwargs["request_method"] = method
+        kwargs["renderer"] = renderer
+        return kwargs
+
 
 class _RouteContext(object):
     def __init__(self, parent):
@@ -43,7 +50,8 @@ class _RouteContext(object):
         self.fm.stmt('config.add_route({!r}, {!r})'.format(route, pattern))
 
     def add_view(self, sym, route, method, d):
-        self.fm.stmt('config.add_view({!r}, route_name={!r}, request_method={!r}, renderer="json")'.format(sym, route, method))
+        view_setting = self.parent.build_view_setting(route, method)
+        self.fm.stmt('config.add_view({!r}, {})'.format(sym, LazyKeywordsRepr(view_setting)))
 
     def add_scan(self, view_module):
         if self.parent.options.use_view_config:
@@ -63,7 +71,7 @@ class _ViewContext(object):
         m = self.m
         self.from_("pyramid.view", "view_config")
 
-        m.stmt(LazyFormat("@view_config({})", LazyKeywordsRepr(dict(route_name=route, request_method=method, renderer="json"))))
+        m.stmt(LazyFormat("@view_config({})", LazyKeywordsRepr(self.parent.build_view_setting(route, method))))
         with m.def_(name, "context", "request"):
             m.stmt('"""')
             if "summary" in d:
@@ -85,16 +93,17 @@ class _ViewContext(object):
 
 
 class ContextStore(object):
-    def __init__(self, output):
+    def __init__(self, output, context_factory=Context):
         self.output = output
         self.contexts = {}
         self.routes = {}
         self.views = {}
+        self.context_factory = context_factory
 
     def get_context(self, module_name):
         if module_name in self.contexts:
             return self.contexts[module_name]
-        context = self.contexts[module_name] = Context()
+        context = self.contexts[module_name] = self.context_factory()
         view_path = "{}.py".format(module_name.replace(".", "/"))
 
         if len(module_name.split(".")) <= 2:
