@@ -145,11 +145,16 @@ class Codegen(object):
             if base_path is not None:
                 pattern = "{}/{}".format(base_path.rstrip("/"), pattern.lstrip("/"))
             route_name = d.get("x-pyramid-route-name", None)
+            base_paramerters = d.get("parameters")
             for method, d in d.items():
-                if method.startswith("x-"):
-                    continue
                 if method == "parameters":
                     continue
+                if method.startswith("x-"):
+                    continue
+
+                if base_paramerters is not None:
+                    d["parameters"] = base_paramerters + (d.get("parameters") or [])
+
                 try:
                     view_path = self.resolver.resolve_view_path(fulldata, d)
                 except KeyError:
