@@ -27,7 +27,7 @@ class Context(object):
         self.view = _ViewContext(parent=self)
         self.used = {}
 
-    def build_view_setting(self, route, method, renderer="json"):
+    def build_view_setting(self, pattern, route, method, renderer="json"):
         kwargs = OrderedDict()
         kwargs["route_name"] = route
         kwargs["request_method"] = method
@@ -49,8 +49,8 @@ class _RouteContext(object):
     def add_route(self, route, pattern, d):
         self.fm.stmt('config.add_route({!r}, {!r})'.format(route, pattern))
 
-    def add_view(self, sym, route, method, d):
-        view_setting = self.parent.build_view_setting(route, method)
+    def add_view(self, pattern, sym, route, method, d):
+        view_setting = self.parent.build_view_setting(pattern, route, method)
         self.fm.stmt('config.add_view({!r}, {})'.format(sym, LazyKeywordsRepr(view_setting)))
 
     def add_scan(self, view_module):
@@ -66,12 +66,13 @@ class _ViewContext(object):
         self.m.sep()
         # todo: scan module file
 
-    def add_view(self, sym, route, method, d, docstring=None):
+    def add_view(self, pattern, sym, route, method, d, docstring=None):
         name = sym.rsplit(".", 1)[-1]
         m = self.m
         self.from_("pyramid.view", "view_config")
 
-        m.stmt(LazyFormat("@view_config({})", LazyKeywordsRepr(self.parent.build_view_setting(route, method))))
+        view_setting = self.parent.build_view_setting(pattern, route, method)
+        m.stmt(LazyFormat("@view_config({})", LazyKeywordsRepr(view_setting)))
         with m.def_(name, "context", "request"):
             m.stmt('"""')
             if "summary" in d:
@@ -167,9 +168,9 @@ class Codegen(object):
                 if k not in ctx.used[route]:  # xxx
                     if ctx.options.use_view_config:
                         docstring = self.resolver.view_docstring(fulldata, d)
-                        ctx.view.add_view(view_path, route, method, d, docstring)
+                        ctx.view.add_view(pattern, view_path, route, method, d, docstring)
                     else:
-                        ctx.route.add_view(view_path, route, method, d)
+                        ctx.route.add_view(pattern, view_path, route, method, d)
 
     def merge_routing(self, store):
         fs = store.output.files
