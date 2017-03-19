@@ -147,6 +147,8 @@ class Codegen(object):
             for method, d in d.items():
                 if method.startswith("x-"):
                     continue
+                if method == "parameters":
+                    continue
                 try:
                     view_path = self.resolver.resolve_view_path(fulldata, d)
                 except KeyError:
