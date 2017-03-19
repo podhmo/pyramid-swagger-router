@@ -133,10 +133,11 @@ class ContextStore(object):
 
 
 class Codegen(object):
-    def __init__(self, resolver):
+    def __init__(self, resolver, context_factory=Context):
         self.resolver = resolver
         self.view_func_modifier = ViewsModifier()
         self.route_func_modifier = RoutesModifier()
+        self.context_factory = context_factory
 
     def add_routing(self, store, fulldata):
         base_path = fulldata.get("basePath")
@@ -191,7 +192,7 @@ class Codegen(object):
                         fs[name] = File(name=name, m=t.dumps())
 
     def codegen(self, data, output):
-        store = ContextStore(output)
+        store = ContextStore(output, context_factory=self.context_factory)
         self.add_routing(store, data)
         self.merge_routing(store)
         return store.output

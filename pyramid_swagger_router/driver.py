@@ -8,6 +8,10 @@ logger = logging.getLogger(__name__)
 
 
 class Driver(object):
+    codegen_factory = Codegen
+    output_factory = SeparatedOutput
+    resolver_factory = Resolver
+
     def run(self, src, dst):
         data = self.load(src)
         result = self.transform(data, dst)
@@ -21,6 +25,6 @@ class Driver(object):
         output.output()
 
     def transform(self, data, dst):
-        resolver = Resolver()
-        output = SeparatedOutput(dst, prefix="")
-        return Codegen(resolver).codegen(data, output)
+        resolver = self.resolver_factory()
+        output = self.output_factory(dst, prefix="")
+        return self.codegen_factory(resolver).codegen(data, output)
